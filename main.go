@@ -38,6 +38,7 @@ func (books Books) Swap(i, j int) {
 }
 
 func getBooks(w http.ResponseWriter, r *http.Request) {
+	log.Println("Returning list of books...")
 	w.Header().Set("Content-Type", "application/json")
 	sort.Sort(Books(books))
 	json.NewEncoder(w).Encode(books)
@@ -48,6 +49,7 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range books {
 		if item.ID == params["id"] {
+			log.Println("Returning single book...")
 			json.NewEncoder(w).Encode(item)
 			return
 		}
@@ -64,6 +66,7 @@ func createBook(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	log.Println("Creating book...")
 	book.ID = strconv.Itoa(lastBookID + 1)
 	books = append(books, book)
 	json.NewEncoder(w).Encode(book)
@@ -74,6 +77,7 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for index, item := range books {
 		if item.ID == params["id"] {
+			log.Println("Updating book...")
 			books = append(books[:index], books[index+1:]...)
 			var book Book
 			_ = json.NewDecoder(r.Body).Decode(&book)
@@ -92,6 +96,7 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for index, item := range books {
 		if item.ID == params["id"] {
+			log.Println("Deleting book...")
 			books = append(books[:index], books[index+1:]...)
 			break
 		}
@@ -101,6 +106,8 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 }
 
 func mockData(data []Book) []Book {
+	log.Println("Creating mock data...")
+
 	data = append(data, Book{
 		ID:    "1",
 		ISBN:  "1111",
