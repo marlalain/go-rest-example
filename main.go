@@ -37,11 +37,15 @@ func (books Books) Swap(i, j int) {
 	books[i], books[j] = books[j], books[i]
 }
 
-func getBooks(w http.ResponseWriter, r *http.Request) {
+func getBooks(w http.ResponseWriter, _ *http.Request) {
 	log.Println("Returning list of books...")
 	w.Header().Set("Content-Type", "application/json")
 	sort.Sort(Books(books))
-	json.NewEncoder(w).Encode(books)
+	err := json.NewEncoder(w).Encode(books)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func getBook(w http.ResponseWriter, r *http.Request) {
@@ -50,12 +54,20 @@ func getBook(w http.ResponseWriter, r *http.Request) {
 	for _, item := range books {
 		if item.ID == params["id"] {
 			log.Println("Returning single book...")
-			json.NewEncoder(w).Encode(item)
+			err := json.NewEncoder(w).Encode(item)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			return
 		}
 	}
 
-	json.NewEncoder(w).Encode(nil)
+	err := json.NewEncoder(w).Encode(nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func createBook(w http.ResponseWriter, r *http.Request) {
@@ -64,12 +76,17 @@ func createBook(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewDecoder(r.Body).Decode(&book)
 	lastBookID, err := strconv.Atoi(books[len(books)-1].ID)
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	log.Println("Creating book...")
 	book.ID = strconv.Itoa(lastBookID + 1)
 	books = append(books, book)
-	json.NewEncoder(w).Encode(book)
+	encodeErr := json.NewEncoder(w).Encode(book)
+	if encodeErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func updateBook(w http.ResponseWriter, r *http.Request) {
@@ -83,12 +100,20 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 			_ = json.NewDecoder(r.Body).Decode(&book)
 			book.ID = item.ID
 			books = append(books, book)
-			json.NewEncoder(w).Encode(book)
+			err := json.NewEncoder(w).Encode(book)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			return
 		}
 	}
 
-	json.NewEncoder(w).Encode(nil)
+	err := json.NewEncoder(w).Encode(nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func deleteBook(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +127,11 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode(nil)
+	err := json.NewEncoder(w).Encode(nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func mockData(data []Book) []Book {
